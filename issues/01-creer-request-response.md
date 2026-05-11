@@ -48,3 +48,21 @@ return Response::json(['ok' => true], 200);
 - Tests unitaires verts.
 - README mis a jour avec exemples.
 
+## Issue 01 - Request et Response
+
+### Objectif
+Poser la base HTTP minimale de Velt: capturer une requête et envoyer une réponse.
+
+### Réalisation
+- `Request` encapsule les superglobales PHP (`$_SERVER`, `$_GET`, `$_POST`) et expose `method()`, `path()`, `query()`, `input()`, `header()`.
+- `Response` construit une réponse HTML avec status, headers et body.
+- `JsonResponse` encode automatiquement les données et ajoute `Content-Type: application/json`.
+
+### Pourquoi c’est important
+- Base commune pour le routeur et les controllers
+- Testable sans dépendre directement de PHP natif
+- Facile à faire évoluer vers d’autres types de réponses
+
+### Tests
+- `RequestTest`: méthode, path, query, input, helpers
+- `ResponseTest`: HTML, JSON, headers, status
