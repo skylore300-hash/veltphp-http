@@ -1,0 +1,154 @@
+# Issue 01 - Base HTTP
+
+## Objectif
+Mettre en place la base HTTP minimale de Velt: capturer une requête et envoyer une réponse HTML ou JSON.
+
+## Contenu livré
+- `Request`:
+  - Capture depuis `$_SERVER`, `$_GET`, `$_POST`
+  - Méthodes: `method()`, `path()`, `query()`, `input()`, `header()`
+- `Response`:
+  - Réponse HTML avec status, headers et body
+  - Méthodes: `html()`, `status()`, `header()`, `send()`
+- `JsonResponse`:
+  - Réponse JSON avec `Content-Type: application/json`
+  - Méthodes: `json()`, `created()`, `noContent()`
+
+## Pourquoi c’est important
+- Base commune pour le routeur et les controllers
+- Code testable sans dépendre directement des superglobales
+- Structure prête pour l’évolution (autres types de réponses)
+
+## Tests (Issue 01)
+- `RequestTest`: méthode, path, query, input, helpers
+- `ResponseTest`: HTML, JSON, headers, status
+
+## Exemple d’utilisation
+```php
+$request = Request::capture();
+$method = $request->method();
+$path = $request->path();
+
+return Response::html('<h1>Hello</h1>', 200);
+return JsonResponse::json(['ok' => true], 200);
+```
+
+
+# Issue 02 - Routeur MVP
+
+## Objectif
+Créer un routeur simple capable de déclarer des routes Web et API.
+
+## Contenu livré
+- `Router`:
+  - Déclaration des routes GET et POST
+  - Matching de chemin exact
+  - Support des paramètres dynamiques `{id}`
+  - Gestion 404 (route absente) et 405 (mauvaise méthode)
+- `Route`:
+  - Stocke la méthode, le chemin, le handler
+  - Extrait les paramètres dynamiques
+
+## Pourquoi c’est important
+- Centralise la logique de routage
+- Base obligatoire pour le dispatch des controllers
+- Compatible avec l’évolution vers middleware et pipeline
+
+## Tests (Issue 02)
+- Route statique (`/`)
+- Route dynamique (`/api/preview/{id}`)
+- 404 si aucune route ne match
+- 405 si mauvaise méthode
+
+## Exemple d’utilisation
+```php
+$router->get('/', [HomeController::class, 'index']);
+$router->post('/login', [AuthController::class, 'login']);
+$router->get('/api/preview/{id}', [PreviewController::class, 'show']);
+```
+
+# Issue 03 - Middleware et dispatch
+
+## Objectif
+Permettre au routeur d'executer des controllers et une chaine middleware simple.
+
+## Contenu livre
+- `Dispatcher`:
+  - Execute le handler du routeur
+  - Supporte callable et `[ClassName::class, 'method']`
+  - Resolution via container si disponible
+  - Normalisation minimale des retours
+- `MiddlewareInterface`:
+  - `handle(Request $request, callable $next)`
+- `Route`:
+  - Attache des middlewares via `middleware()`
+  - Detecte les routes API basiques
+
+## Tests (Issue 03)
+- `DispatcherTest`: handler callable, resolution via container, middleware block/pass, retour JSON en route API
+
+## Exemple d'utilisation
+```php
+$router->get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(AuthMiddleware::class);
+
+$dispatcher = new Dispatcher($router, $container);
+$response = $dispatcher->dispatch($request);
+$response->send();
+```
+
+# Issue 04 - Normalisation des retours et erreurs HTTP
+
+## Objectif
+Uniformiser les retours des controllers et transformer les exceptions HTTP en responses propres.
+
+## Contenu livre
+- `ResponseFactory`:
+  - Convertit `ResponseInterface` directement
+  - Convertit `array` en JSON pour les routes API
+  - Convertit `string` ou `RenderableInterface` en HTML
+  - Convertit `JsonableInterface` en JSON pour les routes API
+  - Transforme les exceptions en responses HTML ou JSON
+
+## Exemple d'utilisation
+```php
+$factory = new ResponseFactory();
+$response = $factory->fromResult(['ok' => true], true);
+```
+
+# Issue 05 - ResponseInterface
+
+## Objectif
+Fournir un contrat commun pour les responses.
+
+## Contenu livre
+- `ResponseInterface` pour status, headers, body, send
+- `Response` et `JsonResponse` alignes sur ce contrat
+
+# Issue 06 - Pipeline middleware explicite
+
+## Objectif
+Executer une chaine de middlewares explicite en onion architecture.
+
+## Contenu livre
+- `Pipeline` pour executer les middlewares dans l'ordre
+- Support du court-circuit (retour d'une response sans appeler `next`)
+
+# Issue 07 - Session et CSRF minimal
+
+## Objectif
+Fournir un token CSRF minimal avec une session simple.
+
+## Contenu livre
+- `SessionStoreInterface`
+- `PhpSessionStore`
+- `CsrfTokenManager`
+
+## Exemple d'utilisation
+```php
+$store = new PhpSessionStore();
+$csrf = new CsrfTokenManager($store);
+
+$token = $csrf->token();
+$field = $csrf->field();
+```

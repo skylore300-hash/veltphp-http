@@ -7,20 +7,22 @@ class Router
     /** @var Route[] */
     private array $routes = [];
 
-    public function get(string $path, mixed $handler): self
+    public function get(string $path, mixed $handler): Route
     {
-        $this->routes[] = new Route('GET', $path, $handler);
-        return $this;
+        $route = new Route('GET', $path, $handler);
+        $this->routes[] = $route;
+        return $route;
     }
 
-    public function post(string $path, mixed $handler): self
+    public function post(string $path, mixed $handler): Route
     {
-        $this->routes[] = new Route('POST', $path, $handler);
-        return $this;
+        $route = new Route('POST', $path, $handler);
+        $this->routes[] = $route;
+        return $route;
     }
 
     /**
-     * @return array{handler:mixed,params:array<string,string>}
+     * @return array{handler:mixed,params:array<string,string>,route:Route}
      */
     public function match(Request $request): array
     {
@@ -42,7 +44,7 @@ class Router
 
         foreach ($pathMatches as [$route, $params]) {
             if ($route->method() === $method) {
-                return ['handler' => $route->handler(), 'params' => $params];
+                return ['handler' => $route->handler(), 'params' => $params, 'route' => $route];
             }
         }
 

@@ -9,12 +9,15 @@ class Route
     private string $regex;
     private array $paramNames;
     private mixed $handler;
+    private array $middlewares = [];
+    private bool $isApi;
 
     public function __construct(string $method, string $path, mixed $handler)
     {
         $this->method = strtoupper($method);
         $this->path = $path;
         $this->handler = $handler;
+        $this->isApi = str_starts_with($path, '/api');
 
         // Précompile le pattern pour accélérer les matches.
         [$regex, $paramNames] = $this->compilePath($path);
@@ -35,6 +38,25 @@ class Route
     public function handler(): mixed
     {
         return $this->handler;
+    }
+
+    public function middleware(mixed $middleware): self
+    {
+        $this->middlewares[] = $middleware;
+        return $this;
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    public function middlewares(): array
+    {
+        return $this->middlewares;
+    }
+
+    public function isApi(): bool
+    {
+        return $this->isApi;
     }
 
     /**
